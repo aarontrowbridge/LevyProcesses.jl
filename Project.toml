@@ -1,0 +1,4 @@
+name = "LevyProcesses"
+uuid = "0f701704-5f36-4da1-aa7a-9292f71e42b2"
+authors = ["Aaron Trowbridge <aaron.j.trowbridge@gmail.com>"]
+version = "0.1.0"
