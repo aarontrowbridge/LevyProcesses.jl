@@ -2,8 +2,6 @@
 
 This project aims to provide a unified framework for modeling Levy processes (e.g. stochastic jump-diffusion processes) with applications to asset pricing.
 
-For a theoretical overview see 
-
 ## goals
 
 - [ ] models
