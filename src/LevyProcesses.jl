@@ -1,5 +1,8 @@
 module LevyProcesses
 
-greet() = print("Hello World!")
+include("models.jl")
+using .Models
 
-end # module
+export LevyProcess
+
+end
