@@ -1,15 +1,41 @@
 using DifferentialEquations
 using CairoMakie
 
-function plot_ensemble(ensemble)
-    ends = [sol.u[end] for sol in ensemble]
-    max = maximum(ends)
-    min = minimum(ends)
-    colorrange = (min, max)
-    fig = Figure()
-    ax = Axis(fig[1,1])
+set_theme!(theme_dark())
+
+function plot_ensemble_comparison(ensemble)
+    fig = Figure(resolution=(600,300))
+    ax1 = Axis(fig[1,1])
     for sol in ensemble
-        lines!(ax, sol.t, sol.u; colormap=Reverse(:matter), color=sol.u[end]*ones(length(sol.u)), colorrange=colorrange)
+        X = [Xᵢ for (Xᵢ, Mᵢ) in sol.u]
+        lines!(ax1, sol.t, X;)
+    end
+    ax2 = Axis(fig[1,2])
+    for sol in ensemble
+        M = [Mᵢ for (Xᵢ, Mᵢ) in sol.u]
+        lines!(ax2, sol.t, M;)
+    end
+    fig
+end
+
+function plot_ensemble_transformation(ensemble; colormap=:heat)
+    colormap = Reverse(colormap)
+    ends = [sol.u[end][2] for sol in ensemble]
+    max = maximum(ends)
+    min = 0
+    colorrange = (min, max)
+    fig = Figure(resolution=(1000,500))
+    ax1 = Axis(fig[1,1])
+    ax2 = Axis(fig[1,2])
+    for sol in ensemble
+        M = sol.u[end][2]
+        X = [Xᵢ for (Xᵢ, Mᵢ) in sol.u]
+        lines!(ax1, sol.t, X; colormap=colormap,
+                              color=min*ones(length(X)), colorrange=colorrange,
+                              linewidth=1.0)
+        lines!(ax2, sol.t, X; colormap=Reverse(colormap),
+                              color=M*ones(length(X)), colorrange=colorrange,
+                              linewidth=1.0)
     end
     fig
 end
@@ -17,25 +43,32 @@ end
 μ = 1.5
 σ = 1.0
 
-X₀ = 0.0
+function f(du, u, p, t)
+    du[1] = μ
+    du[2] = 0
+end
 
-f(X, p, t) = μ
-g(X, p, t) = σ
+function g(du, u, p, t)
+    du[1] = σ
+    du[2] = - μ / σ * u[2]
+end
+
+X₀ = [0.0, 1.0]
 
 dt = 0.001
 tspan = (0.0, 1.0)
 
-prob = SDEProblem(f, g, X₀, tspan)
+W = WienerProcess(0.0, 0.0, 0.0)
+
+prob = SDEProblem(f, g, X₀, tspan, noise=W)
 
 ensembleprob = EnsembleProblem(prob)
 
-sim = solve(ensembleprob, EM(), EnsembleThreads(); trajectories=10, dt=dt)
+n_trajectories = 20
 
-# sol = solve(prob, EM(), dt=dt)
+sim = solve(ensembleprob, EM(), EnsembleThreads(); trajectories=n_trajectories, dt=dt)
 
-plot_ensemble(sim)
+sim[1].u
 
-xs = 0:0.01:10
-ys = 0.5 .* sin.(xs)
-
-lines(xs, ys, linewidth = 5, color=0.5, colormap=:blues)
+# plot_ensemble_comparison(sim)
+plot_ensemble_transformation(sim)
